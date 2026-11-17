@@ -27,22 +27,242 @@
   <div id="game-over"><h2 id="result-message"></h2><div class="score-history-title">Pistetaulukko (Top 20)</div><ul id="score-list"></ul><button id="restart-btn" onclick="aloitaPeli()">Pelaa uudelleen</button></div>
 </div>
 <script>
-  // GitHub Pages käyttää kirjainkoon suhteen tarkkoja polkuja: kansio on Kuvat, ei kuvat.
-  const nimet = ["Väli-Amerikka","Keski-Amerikka","Länsi-Intian saaristo","Anglo-Amerikka","Latinalainen Amerikka","Eteläinen jäämeri","Pohjoinen jäämeri","Amerikka (manner)","Euraasia (manner)","Luode NW","Lounas SW","Kaakko SE","Koillinen NE","Länsi W","Etelä S","Itä E","Pohjoinen N","Päiväntasaaja","Kauriin kääntöpiiri","Kravun kääntöpiiri","Pohjoinen napapiiri","Leveyspiirit","Pituuspiirit","Intian valtameri","Atlantin valtameri","Tyynimeri","Etelä-Amerikka","Pohjois-Amerikka","Australia","Eurooppa","Aasia","Afrikka","Etelämanner","Lähi-itä"];
-  const kaikkiKasvit = nimet.map(nimi => ({nimi, kuva:`Kuvat/${encodeURIComponent(nimi)}.png`}));
-  const yhdyssanaMappi = {"Väli-Amerikka":"Väli-<br>Amerikka","Keski-Amerikka":"Keski-<br>Amerikka","Anglo-Amerikka":"Anglo-<br>Amerikka","Päiväntasaaja":"Päivän-<br>tasaaja","Leveyspiirit":"Leveys-<br>piirit","Pituuspiirit":"Pituus-<br>piirit","Tyynimeri":"Tyyni-<br>meri","Etelä-Amerikka":"Etelä-<br>Amerikka","Pohjois-Amerikka":"Pohjois-<br>Amerikka","Etelämanner":"Etelä-<br>manner","Lähi-itä":"Lähi-<br>itä"};
-  let pisteet=0,aikaaJäljellä=30,kokonaisAika=0,ajastin=null,delayTimer=null,peliKaynnissa=false,nykyinenOikea=null,edellinenOikea=null,vaaratKerrat=0;
-  const napit=[...document.querySelectorAll('.name-btn')];
-  function muotoileNimi(nimi){if(innerWidth<=768)return yhdyssanaMappi[nimi]||nimi.replace(' ','<br>');return nimi}
-  function laskePainikkeenLeveys(){if(innerWidth<=768)return;const dummy=document.createElement('span');Object.assign(dummy.style,{position:'absolute',visibility:'hidden',whiteSpace:'nowrap',fontSize:'15px',fontWeight:'700',fontFamily:"'din-round',system-ui,-apple-system,sans-serif",padding:'0 8px'});document.body.appendChild(dummy);let leveys=0;kaikkiKasvit.forEach(k=>{dummy.textContent=k.nimi;leveys=Math.max(leveys,dummy.getBoundingClientRect().width)});dummy.remove();document.documentElement.style.setProperty('--btn-width',`${leveys+24}px`)}
-  function sekoita(array){const arr=[...array];for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
-  function aloitaPeli(){laskePainikkeenLeveys();document.body.classList.remove('flashing');pisteet=0;aikaaJäljellä=30 kokonaisAika=0;peliKaynnissa=true;edellinenOikea=null;document.getElementById('points').textContent=pisteet;document.getElementById('time-left').textContent=aikaaJäljellä;document.getElementById('game-over').style.display='none';document.getElementById('game-board').style.display='flex';uusiKierros();clearInterval(ajastin);ajastin=setInterval(()=>{aikaaJäljellä--;kokonaisAika++;document.getElementById('time-left').textContent=aikaaJäljellä;if(aikaaJäljellä<=0)lopetaPeli()},1000)}
-  function uusiKierros(){if(!peliKaynnissa)return;clearTimeout(delayTimer);vaaratKerrat=0;const mahdolliset=kaikkiKasvit.filter(k=>!edellinenOikea||k.nimi!==edellinenOikea.nimi);nykyinenOikea=mahdolliset[Math.floor(Math.random()*mahdolliset.length)];edellinenOikea=nykyinenOikea;const vaihtoehdot=sekoita(kaikkiKasvit.filter(k=>k!==nykyinenOikea)).slice(0,5);const kuusi=sekoita([nykyinenOikea,...vaihtoehdot]);
-    const kuva=document.getElementById('plant-image');kuva.classList.remove('visible');kuva.onload=()=>{if(peliKaynnissa)requestAnimationFrame(()=>kuva.classList.add('visible'))};kuva.onerror=()=>{console.error('Kuvan lataus epäonnistui:',kuva.src);kuva.alt=`Kuvaa ei löytynyt: ${nykyinenOikea.nimi}`};kuva.src=nykyinenOikea.kuva;
-    napit.forEach(n=>{n.classList.remove('visible','wrong-flash','correct-reveal');n.disabled=true});delayTimer=setTimeout(()=>{if(!peliKaynnissa)return;napit.forEach((n,i)=>{const kasvi=kuusi[i];n.innerHTML=muotoileNimi(kasvi.nimi);n.dataset.nimi=kasvi.nimi;n.onclick=()=>tarkistaValinta(n,kasvi.nimi);n.disabled=false;n.classList.add('visible')})},3000)}
-  function tarkistaValinta(nappi,valittuNimi){if(!peliKaynnissa||nappi.disabled)return;if(valittuNimi===nykyinenOikea.nimi){pisteet+=2;aikaaJäljellä+=4;document.getElementById('points').textContent=pisteet;document.getElementById('time-left').textContent=aikaaJäljellä;uusiKierros();return}pisteet--;vaaratKerrat++;document.getElementById('points').textContent=pisteet;napppi=nappi;napppi.classList.add('wrong-flash');napppi.disabled=true;if(vaaratKerrat>=2){napit.forEach(n=>{n.disabled=true;if(n.dataset.nimi===nykyinenOikea.nimi)n.classList.add('correct-reveal')});setTimeout(()=>{if(peliKaynnissa)uusiKierros()},2000)}}
-  function lopetaPeli(){peliKaynnissa=false;clearInterval(ajastin);clearTimeout(delayTimer);document.getElementById('game-board').style.display='none';const restart=document.getElementById('restart-btn');restart.disabled=true;setTimeout(()=>restart.disabled=false,2000);const key='nimijahti_maailmankartan-perusasiat_pisteet';let historia=JSON.parse(localStorage.getItem(key)||'[]');const ennatys=historia.length?Math.max(...historia.map(h=>h.pisteet)):-Infinity;const uusiEnnatys=pisteet>ennatys&&pisteet>0;const tulos={id:Date.now(),pisteet,aika:kokonaisAika};historia.push(tulos);historia.sort((a,b)=>b.pisteet-a.pisteet);historia=historia.slice(0,20);localStorage.setItem(key,JSON.stringify(historia));const msg=document.getElementById('result-message');msg.textContent=uusiEnnatys?`Mahtavaa! Teit ennätyksesi ${pisteet} pistettä!`:`Peli päättyi: sait ${pisteet} pistettä!`;if(uusiEnnatys){document.body.classList.add('flashing');setTimeout(()=>document.body.classList.remove('flashing'),5000)}const lista=document.getElementById('score-list');lista.innerHTML='';historia.forEach((item,i)=>{const li=document.createElement('li');li.innerHTML=`<span>#${i+1}</span><span>${item.pisteet} p (${item.aika}s)</span>`;if(item.id===tulos.id)li.className='latest-score';lista.appendChild(li)});document.getElementById('game-over').style.display='flex'}
-  window.addEventListener('resize',laskePainikkeenLeveys);window.addEventListener('contextmenu',e=>e.preventDefault());aloitaPeli();
+  const nimet = [
+    "Väli-Amerikka","Keski-Amerikka","Länsi-Intian saaristo","Anglo-Amerikka","Latinalainen Amerikka",
+    "Eteläinen jäämeri","Pohjoinen jäämeri","Amerikka (manner)","Euraasia (manner)","Luode NW",
+    "Lounas SW","Kaakko SE","Koillinen NE","Länsi W","Etelä S","Itä E","Pohjoinen N","Päiväntasaaja",
+    "Kauriin kääntöpiiri","Kravun kääntöpiiri","Pohjoinen napapiiri","Leveyspiirit","Pituuspiirit",
+    "Intian valtameri","Atlantin valtameri","Tyynimeri","Etelä-Amerikka","Pohjois-Amerikka","Australia",
+    "Eurooppa","Aasia","Afrikka","Etelämanner","Lähi-itä"
+  ];
+  const kaikkiKasvit = nimet.map(nimi => ({ nimi, kuva: `Kuvat/${encodeURIComponent(nimi)}.png` }));
+  const yhdyssanaMappi = {
+    "Väli-Amerikka": "Väli-<br>Amerikka",
+    "Keski-Amerikka": "Keski-<br>Amerikka",
+    "Anglo-Amerikka": "Anglo-<br>Amerikka",
+    "Päiväntasaaja": "Päivän-<br>tasaaja",
+    "Leveyspiirit": "Leveys-<br>piirit",
+    "Pituuspiirit": "Pituus-<br>piirit",
+    "Tyynimeri": "Tyyni-<br>meri",
+    "Etelä-Amerikka": "Etelä-<br>Amerikka",
+    "Pohjois-Amerikka": "Pohjois-<br>Amerikka",
+    "Etelämanner": "Etelä-<br>manner",
+    "Lähi-itä": "Lähi-<br>itä"
+  };
+
+  let pisteet = 0;
+  let aikaaJäljellä = 30;
+  let kokonaisAika = 0;
+  let ajastin = null;
+  let delayTimer = null;
+  let peliKaynnissa = false;
+  let nykyinenOikea = null;
+  let edellinenOikea = null;
+  let vaaratKerrat = 0;
+
+  const napit = [...document.querySelectorAll('.name-btn')];
+  const imgElement = document.getElementById('plant-image');
+
+  function muotoileNimi(nimi) {
+    if (window.innerWidth <= 768) {
+      if (yhdyssanaMappi[nimi]) return yhdyssanaMappi[nimi];
+      if (nimi.includes(' ')) return nimi.replace(' ', '<br>');
+    }
+    return nimi;
+  }
+
+  function laskePainikkeenLeveys() {
+    if (window.innerWidth <= 768) return;
+
+    const dummy = document.createElement('span');
+    dummy.style.position = 'absolute';
+    dummy.style.visibility = 'hidden';
+    dummy.style.whiteSpace = 'nowrap';
+    dummy.style.fontSize = '15px';
+    dummy.style.fontWeight = '700';
+    dummy.style.fontFamily = "'din-round', system-ui, -apple-system, sans-serif";
+    dummy.style.padding = '0 8px';
+    document.body.appendChild(dummy);
+
+    let maxLeveys = 0;
+    kaikkiKasvit.forEach(kasvi => {
+      dummy.textContent = kasvi.nimi;
+      maxLeveys = Math.max(maxLeveys, dummy.getBoundingClientRect().width);
+    });
+    document.body.removeChild(dummy);
+
+    document.documentElement.style.setProperty('--btn-width', `${maxLeveys + 24}px`);
+  }
+
+  function sekoita(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function aloitaPeli() {
+    laskePainikkeenLeveys();
+    document.body.classList.remove('flashing');
+    pisteet = 0;
+    aikaaJäljellä = 30;
+    kokonaisAika = 0;
+    peliKaynnissa = true;
+    edellinenOikea = null;
+
+    document.getElementById('points').textContent = pisteet;
+    document.getElementById('time-left').textContent = aikaaJäljellä;
+    document.getElementById('game-over').style.display = 'none';
+    document.getElementById('game-board').style.display = 'flex';
+
+    uusiKierros();
+
+    clearInterval(ajastin);
+    ajastin = setInterval(() => {
+      aikaaJäljellä--;
+      kokonaisAika++;
+      document.getElementById('time-left').textContent = aikaaJäljellä;
+      if (aikaaJäljellä <= 0) lopetaPeli();
+    }, 1000);
+  }
+
+  function uusiKierros() {
+    if (!peliKaynnissa) return;
+
+    clearTimeout(delayTimer);
+    vaaratKerrat = 0;
+
+    const mahdollisetKasvit = kaikkiKasvit.filter(
+      k => !edellinenOikea || k.nimi !== edellinenOikea.nimi
+    );
+
+    nykyinenOikea = mahdollisetKasvit[Math.floor(Math.random() * mahdollisetKasvit.length)];
+    edellinenOikea = nykyinenOikea;
+
+    const muutKasvit = kaikkiKasvit.filter(k => k.nimi !== nykyinenOikea.nimi);
+    const sekoitetutMuut = sekoita(muutKasvit).slice(0, 5);
+    const kaikkiKuusi = sekoita([nykyinenOikea, ...sekoitetutMuut]);
+
+    imgElement.classList.remove('visible');
+
+    napit.forEach(nappi => {
+      nappi.classList.remove('visible', 'wrong-flash', 'correct-reveal');
+      nappi.disabled = true;
+    });
+
+    imgElement.onload = () => {
+      if (peliKaynnissa) {
+        requestAnimationFrame(() => imgElement.classList.add('visible'));
+      }
+    };
+
+    imgElement.onerror = () => {
+      console.error('Kuvan lataus epäonnistui:', imgElement.src);
+      imgElement.alt = `Kuvaa ei löytynyt: ${nykyinenOikea.nimi}`;
+    };
+
+    imgElement.src = nykyinenOikea.kuva;
+
+    delayTimer = setTimeout(() => {
+      if (!peliKaynnissa) return;
+
+      napit.forEach((nappi, idx) => {
+        const kasvi = kaikkiKuusi[idx];
+        nappi.innerHTML = muotoileNimi(kasvi.nimi);
+        nappi.dataset.nimi = kasvi.nimi;
+        nappi.onclick = () => tarkistaValinta(nappi, kasvi.nimi);
+        nappi.disabled = false;
+        nappi.classList.add('visible');
+      });
+    }, 3000);
+  }
+
+  function tarkistaValinta(nappi, valittuNimi) {
+    if (!peliKaynnissa || nappi.disabled) return;
+
+    if (valittuNimi === nykyinenOikea.nimi) {
+      pisteet += 2;
+      aikaaJäljellä += 4;
+      document.getElementById('points').textContent = pisteet;
+      document.getElementById('time-left').textContent = aikaaJäljellä;
+      uusiKierros();
+      return;
+    }
+
+    pisteet -= 1;
+    vaaratKerrat++;
+    document.getElementById('points').textContent = pisteet;
+    nappi.classList.add('wrong-flash');
+    nappi.disabled = true;
+
+    if (vaaratKerrat >= 2) {
+      const kaikkiNapit = document.querySelectorAll('.name-btn');
+      kaikkiNapit.forEach(b => {
+        b.disabled = true;
+        if (b.dataset.nimi === nykyinenOikea.nimi) {
+          b.classList.add('correct-reveal');
+        }
+      });
+
+      setTimeout(() => {
+        if (peliKaynnissa) uusiKierros();
+      }, 2000);
+    }
+  }
+
+  function lopetaPeli() {
+    peliKaynnissa = false;
+    clearInterval(ajastin);
+    clearTimeout(delayTimer);
+
+    document.getElementById('game-board').style.display = 'none';
+
+    const restartBtn = document.getElementById('restart-btn');
+    restartBtn.disabled = true;
+    setTimeout(() => {
+      restartBtn.disabled = false;
+    }, 2000);
+
+    const storageKey = 'nimijahti_maailmankartan_perusasiat_pisteet';
+    let historia = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const aiempiEnnatys = historia.length > 0 ? Math.max(...historia.map(h => h.pisteet)) : -Infinity;
+    const uusiEnnatys = pisteet > aiempiEnnatys && pisteet > 0;
+
+    const uusiTulos = { id: Date.now(), pisteet: pisteet, aika: kokonaisAika };
+    historia.push(uusiTulos);
+    historia.sort((a, b) => b.pisteet - a.pisteet);
+    historia = historia.slice(0, 20);
+
+    localStorage.setItem(storageKey, JSON.stringify(historia));
+
+    const msgElement = document.getElementById('result-message');
+    if (uusiEnnatys) {
+      msgElement.textContent = `Mahtavaa! Teit ennätyksesi ${pisteet} pistettä!`;
+      document.body.classList.add('flashing');
+      setTimeout(() => document.body.classList.remove('flashing'), 5000);
+    } else {
+      msgElement.textContent = `Peli päättyi: sait ${pisteet} pistettä!`;
+    }
+
+    const scoreList = document.getElementById('score-list');
+    scoreList.innerHTML = '';
+
+    historia.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>#${index + 1}</span> <span>${item.pisteet} p (${item.aika}s)</span>`;
+      if (item.id === uusiTulos.id) li.className = 'latest-score';
+      scoreList.appendChild(li);
+    });
+
+    document.getElementById('game-over').style.display = 'flex';
+  }
+
+  window.addEventListener('resize', laskePainikkeenLeveys);
+  window.addEventListener('contextmenu', e => e.preventDefault());
+
+  aloitaPeli();
 </script>
 </body>
 </html>
